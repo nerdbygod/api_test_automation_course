@@ -1,10 +1,10 @@
 import requests
 
-BASE_URL = 'https://playground.learnqa.ru/'
-API_GET_TEXT = BASE_URL + 'api/get_text'
-API_HELLO = BASE_URL + 'api/hello'
+BASE_URL = "https://playground.learnqa.ru/"
+API_GET_TEXT = f"{BASE_URL}api/get_text"
+API_HELLO = f"{BASE_URL}api/hello"
 
-payload = {"name": "Pavel"}
+payload = {"name": "Peter"}
 
 response = requests.get(API_HELLO, params=payload)
 print(response.text)
