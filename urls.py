@@ -1,0 +1,7 @@
+BASE_URL = "https://playground.learnqa.ru/"
+API_GET_TEXT = f"{BASE_URL}api/get_text"
+API_HELLO = f"{BASE_URL}api/hello"
+API_CHECK_TYPE = f"{BASE_URL}api/check_type"
+API_LONG_REDIRECT = f"{BASE_URL}api/long_redirect"
+API_GET_AUTH_COOKIE = f"{BASE_URL}api/get_auth_cookie"
+API_CREATE_USER = f"{BASE_URL}api/user"
