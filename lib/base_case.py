@@ -8,7 +8,7 @@ class BaseCase:
             response: Response,
             cookie_name: str
     ):
-        assert cookie_name in response.cookies, f"Cannot find {cookie_name} in the response"
+        assert cookie_name in response.cookies, f"Cannot find {cookie_name} in response for {response.url}"
         return response.cookies[cookie_name]
 
     def get_header(
@@ -16,7 +16,7 @@ class BaseCase:
             response: Response,
             header_name: str
     ):
-        assert header_name in response.headers, f"Cannot find {header_name} in the response"
+        assert header_name in response.headers, f"Cannot find {header_name} in response for {response.url}"
         return response.headers[header_name]
 
     def get_json_value(
@@ -25,7 +25,10 @@ class BaseCase:
             name: int | str
     ):
         try:
-            assert name in response.json(), f"There is no field with the name {name} in the response body"
+            response_as_dict = response.json()
         except JSONDecodeError:
-            assert False, f"Response is not in JSON format. Response text is {response.text}"
-        return response.json()[name]
+            raise AssertionError(f"Response for {response.url} is not in JSON format. "
+                                 f"Response text is {response.text}") from None
+        assert name in response_as_dict, f"There is no field with the name {name} " \
+                                         f"in the response body for {response.url}"
+        return response_as_dict[name]
