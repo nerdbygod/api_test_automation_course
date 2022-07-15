@@ -4,7 +4,8 @@ from json.decoder import JSONDecodeError
 
 class BaseCase:
     def get_cookie(
-            self, response: Response,
+            self, 
+            response: Response,
             cookie_name: str
     ):
         assert cookie_name in response.cookies, f"Cannot find {cookie_name} in the response"
