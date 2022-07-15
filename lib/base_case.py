@@ -27,5 +27,5 @@ class BaseCase:
         try:
             assert name in response.json(), f"There is no field with the name {name} in the response body"
         except JSONDecodeError:
-            return f"Response is not in JSON format. Response text is {response.text}"
+            assert False, f"Response is not in JSON format. Response text is {response.text}"
         return response.json()[name]
