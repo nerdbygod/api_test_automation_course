@@ -7,6 +7,8 @@ from lib.assertions import Assertions
 
 
 class TestUserAuthorization(BaseCase):
+    condition = ["no_token", "no_cookie"]
+
     def setup(self):
         response1 = requests.post(API_USER_LOGIN, data=test_user_credentials)
 
@@ -29,8 +31,6 @@ class TestUserAuthorization(BaseCase):
             self.user_id_from_auth_method,
             f"User_id from check method is {user_id_from_check_method}, should be {self.user_id_from_auth_method}"
         )
-
-    condition = ["no_token", "no_cookie"]
 
     @pytest.mark.parametrize("condition", condition)
     def test_authorization_without_headers(self, condition):
