@@ -25,7 +25,7 @@ class TestUserAuthorization(BaseCase):
 
         user_id_from_check_method = self.get_json_value(response2, "user_id")
 
-        Assertions.assert_json_value_by_name(
+        Assertions.assert_json_value_by_key(
             response2,
             "user_id",
             self.user_id_from_auth_method,
@@ -43,7 +43,7 @@ class TestUserAuthorization(BaseCase):
 
             user_id_from_check_method = self.get_json_value(response3, "user_id")
 
-            Assertions.assert_json_value_by_name(
+            Assertions.assert_json_value_by_key(
                 response3,
                 "user_id",
                 expected_id_value,
@@ -58,7 +58,7 @@ class TestUserAuthorization(BaseCase):
 
             user_id_from_check_method = self.get_json_value(response4, "user_id")
 
-            Assertions.assert_json_value_by_name(
+            Assertions.assert_json_value_by_key(
                 response4,
                 "user_id",
                 expected_id_value,
