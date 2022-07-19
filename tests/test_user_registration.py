@@ -9,15 +9,16 @@ from faker import Faker
 
 class TestUserRegistration(BaseCase):
     params_to_send = ["email", "password", "username", "firstName", "lastName"]
+    field_max_length = 250
 
     def setup(self):
-        fake = Faker()
+        self.fake = Faker()
 
-        self.user_data = {"username": fake.user_name(),
-                          "firstName": fake.first_name(),
-                          "lastName": fake.last_name(),
-                          "email": fake.email(),
-                          "password": fake.pystr(5, 5)
+        self.user_data = {"username": self.fake.user_name(),
+                          "firstName": self.fake.first_name(),
+                          "lastName": self.fake.last_name(),
+                          "email": self.fake.email(),
+                          "password": self.fake.pystr(5, 5)
                           }
 
     def test_user_registration_with_valid_data(self):
@@ -36,10 +37,40 @@ class TestUserRegistration(BaseCase):
 
     @pytest.mark.parametrize("param_to_send", params_to_send)
     def test_user_creation_without_required_params(self, param_to_send):
-        error_message = f"The following required params are missed: {param_to_send}"
         self.user_data.pop(param_to_send)
+        error_message = f"The following required params are missed: {param_to_send}"
+
         response = requests.post(API_USER_CREATE, data=self.user_data)
 
         Assertions.assert_status_code(response, 400)
-        assert response.text == error_message, f"Included param is {param_to_send}, " \
+        assert response.text == error_message, f"Included param is '{param_to_send}', " \
                                                f"error message should be {error_message}"
+
+    @pytest.mark.parametrize("invalid_param", params_to_send)
+    def test_user_creation_with_empty_params(self, invalid_param):
+        self.user_data.update({invalid_param: ""})
+        error_message = f"The value of '{invalid_param}' field is too short"
+
+        response = requests.post(API_USER_CREATE, data=self.user_data)
+
+        Assertions.assert_status_code(response, 400)
+        assert response.text == error_message, f"Invalid param is '{invalid_param}', " \
+                                               f"error message should be {error_message}"
+
+    @pytest.mark.parametrize("too_long_param", params_to_send)
+    def test_user_creation_with_too_long_params(self, too_long_param):
+        self.user_data.update(
+            {
+                too_long_param: self.fake.pystr(self.field_max_length + 1, self.field_max_length + 1)
+            }
+        )
+        error_message = f"The value of '{too_long_param}' field is too long"
+
+        response = requests.post(API_USER_CREATE, data=self.user_data)
+
+        Assertions.assert_status_code(response, 400)
+        assert response.text == error_message, f"Invalid param is '{too_long_param}', " \
+                                               f"error message should be {error_message}, but " \
+                                               f"'{response.text}' is returned"
+
+    # To-do: add test to check invalid email less than max_length
