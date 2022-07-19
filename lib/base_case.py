@@ -4,7 +4,7 @@ from lib.assertions import Assertions
 
 class BaseCase:
     def get_cookie(
-            self, 
+            self,
             response: Response,
             cookie_name: str
     ):

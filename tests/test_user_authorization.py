@@ -23,13 +23,10 @@ class TestUserAuthorization(BaseCase):
             headers={"x-csrf-token": self.csrf_token_header},
         )
 
-        user_id_from_check_method = self.get_json_value(response2, "user_id")
-
         Assertions.assert_json_value_by_key(
             response2,
             "user_id",
-            self.user_id_from_auth_method,
-            f"User_id from check method is {user_id_from_check_method}, should be {self.user_id_from_auth_method}"
+            self.user_id_from_auth_method
         )
 
     @pytest.mark.parametrize("condition", condition)
@@ -41,14 +38,10 @@ class TestUserAuthorization(BaseCase):
                 cookies={"auth_sid": self.auth_sid_cookie},
             )
 
-            user_id_from_check_method = self.get_json_value(response3, "user_id")
-
             Assertions.assert_json_value_by_key(
                 response3,
                 "user_id",
-                expected_id_value,
-                f"user_id should equal to {expected_id_value} if no token is provided, "
-                f"equals {user_id_from_check_method}"
+                expected_id_value
             )
         else:
             response4 = requests.get(
@@ -56,12 +49,8 @@ class TestUserAuthorization(BaseCase):
                 headers={"x-csrf-token": self.csrf_token_header}
             )
 
-            user_id_from_check_method = self.get_json_value(response4, "user_id")
-
             Assertions.assert_json_value_by_key(
                 response4,
                 "user_id",
-                expected_id_value,
-                f"user_id should equal to {expected_id_value} if no cookie is provided, "
-                f"equals {user_id_from_check_method}"
+                expected_id_value
             )
