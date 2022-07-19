@@ -4,33 +4,29 @@ from requests import Response
 
 class Assertions:
     @staticmethod
-    def assert_json_has_key(response: Response, key):
+    def to_json(response: Response) -> dict:
         try:
-            response_obj = response.json()
-            assert key in response_obj, f"Response for '{response.url}' doesn't have expected key '{key}'"
+            return response.json()
         except JSONDecodeError:
             raise AssertionError(f"Response for {response.url} is not in JSON format. "
                                  f"Response text is {response.text}") from None
+
+    @staticmethod
+    def assert_json_has_key(response: Response, key):
+        response_obj = Assertions.to_json(response)
+        assert key in response_obj, f"Response for '{response.url}' doesn't have expected key '{key}'"
 
     @staticmethod
     def assert_json_has_keys(response: Response, *args):
-        try:
-            response_obj = response.json()
-            for key in args:
-                assert key in response_obj, f"Response for '{response.url}' doesn't have expected key '{key}'"
-        except JSONDecodeError:
-            raise AssertionError(f"Response for {response.url} is not in JSON format. "
-                                 f"Response text is {response.text}") from None
+        response_obj = Assertions.to_json(response)
+        for key in args:
+            assert key in response_obj, f"Response for '{response.url}' doesn't have expected key '{key}'"
 
     @staticmethod
     def assert_json_has_not_keys(response: Response, *args):
-        try:
-            response_obj = response.json()
-            for key in args:
-                assert key not in response_obj, f"Response for '{response.url}' has unexpected key '{key}'"
-        except JSONDecodeError:
-            raise AssertionError(f"Response for '{response.url}' is not in JSON format. "
-                                 f"Response text is {response.text}") from None
+        response_obj = Assertions.to_json(response)
+        for key in args:
+            assert key not in response_obj, f"Response for '{response.url}' has unexpected key '{key}'"
 
     @staticmethod
     def assert_json_value_by_key(response: Response, key, expected_value):
@@ -41,11 +37,8 @@ class Assertions:
 
     @staticmethod
     def assert_equal_json_objects(response: Response, expected_result: dict):
-        try:
-            assert response.json() == expected_result, "JSON objects are not equal!"
-        except JSONDecodeError:
-            raise AssertionError(f"Response for {response.url} is not in JSON format. "
-                                 f"Response text is {response.text}") from None
+        response_obj = Assertions.to_json(response)
+        assert response_obj == expected_result, "JSON objects are not equal!"
 
     @staticmethod
     def assert_status_code(response: Response, expected_code: int):
