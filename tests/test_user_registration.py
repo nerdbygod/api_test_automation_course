@@ -9,17 +9,10 @@ from faker import Faker
 
 class TestUserRegistration(BaseCase):
     params_to_send = ["email", "password", "username", "firstName", "lastName"]
-    field_max_length = 250
+    max_length = 250
 
     def setup(self):
-        self.fake = Faker()
-
-        self.user_data = {"username": self.fake.user_name(),
-                          "firstName": self.fake.first_name(),
-                          "lastName": self.fake.last_name(),
-                          "email": self.fake.email(),
-                          "password": self.fake.pystr(5, 5)
-                          }
+        self.user_data = self.prepare_registration_data()
 
     def test_user_registration_with_valid_data(self):
         response = requests.post(API_USER_CREATE, data=self.user_data)
@@ -55,13 +48,13 @@ class TestUserRegistration(BaseCase):
 
         Assertions.assert_status_code(response, 400)
         assert response.text == error_message, f"Invalid param is '{invalid_param}', " \
-                                               f"error message should be {error_message}"
+                                               f"error message should be '{error_message}'"
 
     @pytest.mark.parametrize("too_long_param", params_to_send)
     def test_user_creation_with_too_long_params(self, too_long_param):
         self.user_data.update(
             {
-                too_long_param: self.fake.pystr(self.field_max_length + 1, self.field_max_length + 1)
+                too_long_param: self.random_sting(length=self.max_length + 1)
             }
         )
         error_message = f"The value of '{too_long_param}' field is too long"
@@ -70,7 +63,7 @@ class TestUserRegistration(BaseCase):
 
         Assertions.assert_status_code(response, 400)
         assert response.text == error_message, f"Invalid param is '{too_long_param}', " \
-                                               f"error message should be {error_message}, but " \
+                                               f"error message should be '{error_message}', but " \
                                                f"'{response.text}' is returned"
 
     # To-do: add test to check invalid email less than max_length

@@ -3,7 +3,7 @@ test_user_for_creation_data = {
     "firstName": "John",
     "lastName": "Doe",
     "email": "johndoe2001@qa.qa",
-    "password": "johndoe123",
+    "password": "johndoe123"
 }
 
 test_user_authorized_data = {
