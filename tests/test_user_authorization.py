@@ -1,3 +1,4 @@
+import allure
 import pytest
 from utils.urls import API_USER_LOGIN, API_USER_AUTH
 from utils.data_for_tests import test_user_credentials
@@ -6,6 +7,7 @@ from lib.assertions import Assertions
 from lib.send_requests import SendRequest
 
 
+@allure.epic("User authorization test cases")
 class TestUserAuthorization(BaseCase):
     condition = ["no_token", "no_cookie"]
 
@@ -16,6 +18,7 @@ class TestUserAuthorization(BaseCase):
         self.csrf_token_header = self.get_header(login_response, "x-csrf-token")
         self.user_id_from_auth_method = self.get_json_value(login_response, "user_id")
 
+    @allure.description("Tests if user can successfully authorize using his valid credentials")
     def test_successful_user_authorization(self):
         response = SendRequest.get(
             API_USER_AUTH,
@@ -29,6 +32,7 @@ class TestUserAuthorization(BaseCase):
             self.user_id_from_auth_method
         )
 
+    @allure.description("Tests if user is unable to authorize without auth cookies and csrf token")
     @pytest.mark.parametrize("condition", condition)
     def test_authorization_without_headers(self, condition):
         expected_id_value = 0

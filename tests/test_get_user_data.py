@@ -1,3 +1,4 @@
+import allure
 from lib.base_case import BaseCase
 from lib.assertions import Assertions
 from utils.urls import API_USER_CREATE, API_USER_LOGIN
@@ -6,6 +7,7 @@ from random import randint
 from lib.send_requests import SendRequest
 
 
+@allure.epic("Get user data cases")
 class TestGetUserData(BaseCase):
     def setup(self):
         self.test_user_id = test_user_authorized_data["id"]
@@ -21,6 +23,7 @@ class TestGetUserData(BaseCase):
 
         self.unexpected_keys = ("id", "email", "firstName", "lastName")
 
+    @allure.description("Test if unauthorized user is not able to get user data")
     def test_get_user_data_unauthorized(self):
         response = SendRequest.get(self.api_user_id)
 
@@ -32,6 +35,7 @@ class TestGetUserData(BaseCase):
         Assertions.assert_json_has_not_keys(response, *self.unexpected_keys)
         Assertions.assert_json_value_by_key(response, "username", self.expected_user_name)
 
+    @allure.description("Test if authorized user is able to get his user data")
     def test_get_user_data_authorized_as_same_user(self):
         response = SendRequest.get(
             self.api_user_id,
@@ -43,6 +47,7 @@ class TestGetUserData(BaseCase):
         Assertions.assert_json_has_keys(response, *expected_keys)
         Assertions.assert_equal_json_objects(response, test_user_authorized_data)
 
+    @allure.description("Test if authorized user is unable to get user data of another user")
     def test_get_user_data_authorized_as_different_user(self):
         api_user_id = f"{API_USER_CREATE}/1"
         response = SendRequest.get(
@@ -54,6 +59,7 @@ class TestGetUserData(BaseCase):
         Assertions.assert_json_has_not_keys(response, *self.unexpected_keys)
         Assertions.assert_different_json_values_by_key(response, "username", self.expected_user_name)
 
+    @allure.description("Test if authorized user is unable to get data of non-existing user")
     def test_get_unexisting_user_data_unauthorized(self):
         unexisting_user_id = randint(400_000, 500_000)
         api_user_id = f"{API_USER_CREATE}/{unexisting_user_id}"

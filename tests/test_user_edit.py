@@ -1,10 +1,13 @@
+import allure
 from lib.assertions import Assertions
 from lib.base_case import BaseCase
 from utils.urls import API_USER_CREATE, API_USER_LOGIN
 from lib.send_requests import SendRequest
 
 
+@allure.epic("Editing user data test cases")
 class TestUserSuccessfulEdit(BaseCase):
+    @allure.description("Tests if authorized user can successfully edit his first name")
     def test_edit_created_user_first_name(self):
         # Register new user
         register_data = self.prepare_registration_data()
@@ -50,6 +53,7 @@ class TestUserSuccessfulEdit(BaseCase):
             new_first_name
         )
 
+    @allure.description("Tests if authorized user can successfully edit his last name")
     def test_edit_create_user_last_name(self):
         # Register new user
         register_data = self.prepare_registration_data()
