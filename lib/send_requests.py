@@ -1,4 +1,5 @@
 import requests
+from .logger import Logger
 
 
 class SendRequest:
@@ -32,10 +33,14 @@ class SendRequest:
         if cookies is None:
             cookies = {}
 
+        Logger.add_request(method, url, data, headers, cookies)
+
         response = requests.request(method=method,
                                     url=url,
                                     data=data,
                                     headers=headers,
                                     cookies=cookies)
+
+        Logger.add_response(response)
 
         return response
