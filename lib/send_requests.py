@@ -1,6 +1,7 @@
 import requests
 import allure
 from .logger import Logger
+from environment import ENVIRONMENT
 
 
 class SendRequest:
@@ -36,7 +37,7 @@ class SendRequest:
               cookies: dict,
               logging: bool):
 
-        url = f"https://playground.learnqa.ru/api{url}"
+        url = f"{ENVIRONMENT.get_base_url()}{url}"
 
         if headers is None:
             headers = {}
