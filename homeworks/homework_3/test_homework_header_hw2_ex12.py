@@ -1,5 +1,5 @@
 import requests
-from urls import API_HOMEWORK_HEADER
+from utils.urls import API_HOMEWORK_HEADER
 
 
 class TestHomeworkHeader:

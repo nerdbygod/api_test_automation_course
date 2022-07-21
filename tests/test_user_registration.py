@@ -25,12 +25,12 @@ class TestUserRegistration(BaseCase):
     @allure.description("Tests if user is unable to register with existing email")
     def test_user_creation_with_existing_email(self):
         existing_email = test_user_for_creation_data['email']
+        error_message = f"Users with email '{existing_email}' already exists"
 
         response = SendRequest.post(API_USER_CREATE, data=test_user_for_creation_data)
 
         Assertions.assert_status_code(response, 400)
-        api_error_text = f"Users with email '{existing_email}' already exists"
-        assert response.text == api_error_text, f"Unexpected response: {response.text}"
+        Assertions.assert_response_text(response, error_message)
 
     @allure.description("Tests if user is unable to register if one parameter is missing in request body")
     @pytest.mark.parametrize("param_to_send", params_to_send)
@@ -41,8 +41,7 @@ class TestUserRegistration(BaseCase):
         response = SendRequest.post(API_USER_CREATE, data=self.user_data)
 
         Assertions.assert_status_code(response, 400)
-        assert response.text == error_message, f"Included param is '{param_to_send}', " \
-                                               f"error message should be {error_message}"
+        Assertions.assert_response_text(response, error_message)
 
     @allure.description("Tests if user is unable to register if one parameter is empty")
     @pytest.mark.parametrize("invalid_param", params_to_send)
@@ -53,8 +52,7 @@ class TestUserRegistration(BaseCase):
         response = SendRequest.post(API_USER_CREATE, data=self.user_data)
 
         Assertions.assert_status_code(response, 400)
-        assert response.text == error_message, f"Invalid param is '{invalid_param}', " \
-                                               f"error message should be '{error_message}'"
+        Assertions.assert_response_text(response, error_message)
 
     @allure.description("Tests if user is unable to register if one parameter exceeds max length")
     @pytest.mark.parametrize("too_long_param", params_to_send)
@@ -69,8 +67,14 @@ class TestUserRegistration(BaseCase):
         response = SendRequest.post(API_USER_CREATE, data=self.user_data)
 
         Assertions.assert_status_code(response, 400)
-        assert response.text == error_message, f"Invalid param is '{too_long_param}', " \
-                                               f"error message should be '{error_message}', but " \
-                                               f"'{response.text}' is returned"
+        Assertions.assert_response_text(response, error_message)
 
-    # To-do: add test to check invalid email less than max_length
+    @allure.description("Tests if user us unable to register if '@' is missing in email parameter")
+    def test_user_creation_with_invalid_email(self):
+        self.user_data["email"] = self.user_data["email"].replace("@", '')
+        error_message = "Invalid email format"
+
+        response = SendRequest.post(API_USER_CREATE, data=self.user_data)
+
+        Assertions.assert_status_code(response, 400)
+        Assertions.assert_response_text(response, error_message)

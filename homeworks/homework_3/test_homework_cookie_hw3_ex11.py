@@ -1,5 +1,5 @@
 import requests
-from urls import API_HOMEWORK_COOKIE
+from utils.urls import API_HOMEWORK_COOKIE
 
 
 class TestHomeworkCookie:

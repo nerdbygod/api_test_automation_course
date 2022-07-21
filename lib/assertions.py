@@ -52,3 +52,9 @@ class Assertions:
         actual_value = response.json()[key]
         assert actual_value != expected_value, \
             f"Unexpected equal '{key}' values: '{actual_value}' should not be '{expected_value}'"
+
+    @staticmethod
+    def assert_response_text(response: Response, expected_text: str):
+        actual_text = response.text
+        assert actual_text == expected_text, f"Unexpected response text for URL: '{response.url}': " \
+                                             f"got {actual_text}, expected '{expected_text}'"

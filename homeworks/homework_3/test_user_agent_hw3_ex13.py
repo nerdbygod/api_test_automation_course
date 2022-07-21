@@ -1,6 +1,6 @@
 import requests
 import pytest
-from urls import API_USER_AGENT_CHECK
+from utils.urls import API_USER_AGENT_CHECK
 
 
 class TestUserAgent:

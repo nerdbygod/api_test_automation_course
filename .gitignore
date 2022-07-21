@@ -134,4 +134,4 @@ dmypy.json
 /logs
 
 # Test reports
-/test_reports/*
+/test_reports/
