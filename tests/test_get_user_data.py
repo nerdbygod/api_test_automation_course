@@ -1,9 +1,9 @@
-import requests
 from lib.base_case import BaseCase
 from lib.assertions import Assertions
-from urls import API_USER_CREATE, API_USER_LOGIN
+from utils.urls import API_USER_CREATE, API_USER_LOGIN
 from utils.data_for_tests import test_user_authorized_data, test_user_credentials
 from random import randint
+from lib.send_requests import SendRequest
 
 
 class TestGetUserData(BaseCase):
@@ -11,7 +11,7 @@ class TestGetUserData(BaseCase):
         self.test_user_id = test_user_authorized_data["id"]
         self.expected_user_name = test_user_authorized_data["username"]
 
-        response = requests.post(API_USER_LOGIN, data=test_user_credentials)
+        response = SendRequest.post(API_USER_LOGIN, data=test_user_credentials)
 
         self.auth_sid_cookie = self.get_cookie(response, "auth_sid")
         self.csrf_token_header = self.get_header(response, "x-csrf-token")
@@ -22,7 +22,7 @@ class TestGetUserData(BaseCase):
         self.unexpected_keys = ("id", "email", "firstName", "lastName")
 
     def test_get_user_data_unauthorized(self):
-        response = requests.get(self.api_user_id)
+        response = SendRequest.get(self.api_user_id)
 
         Assertions.assert_json_value_by_key(
             response,
@@ -33,7 +33,7 @@ class TestGetUserData(BaseCase):
         Assertions.assert_json_value_by_key(response, "username", self.expected_user_name)
 
     def test_get_user_data_authorized_as_same_user(self):
-        response = requests.get(
+        response = SendRequest.get(
             self.api_user_id,
             cookies={"auth_sid": self.auth_sid_cookie},
             headers={"x-csrf-token": self.csrf_token_header}
@@ -45,7 +45,7 @@ class TestGetUserData(BaseCase):
 
     def test_get_user_data_authorized_as_different_user(self):
         api_user_id = f"{API_USER_CREATE}/1"
-        response = requests.get(
+        response = SendRequest.get(
             api_user_id,
             cookies={"auth_sid": self.auth_sid_cookie},
             headers={"x-csrf-token": self.csrf_token_header}
@@ -57,6 +57,6 @@ class TestGetUserData(BaseCase):
     def test_get_unexisting_user_data_unauthorized(self):
         unexisting_user_id = randint(400_000, 500_000)
         api_user_id = f"{API_USER_CREATE}/{unexisting_user_id}"
-        response = requests.get(api_user_id)
+        response = SendRequest.get(api_user_id)
 
         assert response.text == "User not found", f"'user_id': {unexisting_user_id} should be unexisting"

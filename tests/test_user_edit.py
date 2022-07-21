@@ -1,14 +1,14 @@
-import requests
 from lib.assertions import Assertions
 from lib.base_case import BaseCase
-from urls import *
+from utils.urls import API_USER_CREATE, API_USER_LOGIN
+from lib.send_requests import SendRequest
 
 
 class TestUserSuccessfulEdit(BaseCase):
     def test_edit_created_user_first_name(self):
         # Register new user
         register_data = self.prepare_registration_data()
-        response_1 = requests.post(API_USER_CREATE, data=register_data)
+        response_1 = SendRequest.post(API_USER_CREATE, data=register_data)
 
         Assertions.assert_status_code(response_1, 200)
         Assertions.assert_json_has_key(response_1, "id")
@@ -22,7 +22,7 @@ class TestUserSuccessfulEdit(BaseCase):
             "email": email,
             "password": password
         }
-        response_2 = requests.post(API_USER_LOGIN, data=login_data)
+        response_2 = SendRequest.post(API_USER_LOGIN, data=login_data)
         auth_sid_cookie = self.get_cookie(response_2, "auth_sid")
         csrf_token_header = self.get_header(response_2, "x-csrf-token")
 
@@ -30,7 +30,7 @@ class TestUserSuccessfulEdit(BaseCase):
         api_update_user = f"{API_USER_CREATE}/{created_user_id}"
         new_first_name = "New first name"
 
-        response_3 = requests.put(
+        response_3 = SendRequest.put(
             api_update_user,
             cookies={"auth_sid": auth_sid_cookie},
             headers={"x-csrf-token": csrf_token_header},
@@ -39,7 +39,7 @@ class TestUserSuccessfulEdit(BaseCase):
         Assertions.assert_status_code(response_3, 200)
 
         # Check changed data
-        response_4 = requests.get(
+        response_4 = SendRequest.get(
             api_update_user,
             cookies={"auth_sid": auth_sid_cookie},
             headers={"x-csrf-token": csrf_token_header}
@@ -53,7 +53,7 @@ class TestUserSuccessfulEdit(BaseCase):
     def test_edit_create_user_last_name(self):
         # Register new user
         register_data = self.prepare_registration_data()
-        response_1 = requests.post(API_USER_CREATE, data=register_data)
+        response_1 = SendRequest.post(API_USER_CREATE, data=register_data)
 
         Assertions.assert_status_code(response_1, 200)
         Assertions.assert_json_has_key(response_1, "id")
@@ -67,7 +67,7 @@ class TestUserSuccessfulEdit(BaseCase):
             "email": email,
             "password": password
         }
-        response_2 = requests.post(API_USER_LOGIN, data=login_data)
+        response_2 = SendRequest.post(API_USER_LOGIN, data=login_data)
         auth_sid_cookie = self.get_cookie(response_2, "auth_sid")
         csrf_token_header = self.get_header(response_2, "x-csrf-token")
 
@@ -75,7 +75,7 @@ class TestUserSuccessfulEdit(BaseCase):
         api_update_user = f"{API_USER_CREATE}/{created_user_id}"
         new_last_name = "New last name"
 
-        response_3 = requests.put(
+        response_3 = SendRequest.put(
             api_update_user,
             cookies={"auth_sid": auth_sid_cookie},
             headers={"x-csrf-token": csrf_token_header},
@@ -84,7 +84,7 @@ class TestUserSuccessfulEdit(BaseCase):
         Assertions.assert_status_code(response_3, 200)
 
         # Check changed data
-        response_4 = requests.get(
+        response_4 = SendRequest.get(
             api_update_user,
             cookies={"auth_sid": auth_sid_cookie},
             headers={"x-csrf-token": csrf_token_header}
