@@ -1,10 +1,10 @@
+from random import randint
 import allure
 from lib.base_case import BaseCase
 from lib.assertions import Assertions
+from lib.send_requests import SendRequest
 from utils.urls import API_USER_CREATE, API_USER_LOGIN
 from utils.data_for_tests import test_user_authorized_data, test_user_credentials
-from random import randint
-from lib.send_requests import SendRequest
 
 
 @allure.epic("Get user data cases")

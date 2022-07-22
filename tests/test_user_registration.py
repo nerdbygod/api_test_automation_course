@@ -2,9 +2,9 @@ import pytest
 import allure
 from lib.base_case import BaseCase
 from lib.assertions import Assertions
+from lib.send_requests import SendRequest
 from utils.data_for_tests import test_user_for_creation_data
 from utils.urls import API_USER_CREATE
-from lib.send_requests import SendRequest
 
 
 @allure.epic("User registration test cases")
