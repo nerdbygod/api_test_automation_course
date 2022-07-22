@@ -32,6 +32,10 @@ class Assertions:
     def assert_json_value_by_key(response: Response, key, expected_value):
         Assertions.assert_json_has_key(response, key)
         actual_value = response.json()[key]
+        assert type(actual_value) == \
+               type(expected_value), f"Values have different types. " \
+                                     f"Actual value '{actual_value}' is {type(actual_value)}, " \
+                                     f"expected value '{expected_value}' is {type(expected_value)}"
         assert actual_value == expected_value, \
             f"Unexpected '{key}' value: '{actual_value}' should be '{expected_value}'"
 

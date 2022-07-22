@@ -2,6 +2,7 @@ from requests import Response
 from lib.assertions import Assertions
 from faker import Faker
 
+
 class BaseCase:
     def get_cookie(
             self,
@@ -38,6 +39,6 @@ class BaseCase:
         }
         return test_user_data
 
-    def random_sting(self, length=5):
+    def random_sting(self, length=7):
         fake = Faker()
         return fake.pystr(length, length)
