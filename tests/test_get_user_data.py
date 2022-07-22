@@ -10,7 +10,6 @@ from lib.send_requests import SendRequest
 @allure.epic("Get user data cases")
 class TestGetUserData(BaseCase):
     def setup(self):
-        self.test_user_id = test_user_authorized_data["id"]
         self.expected_user_name = test_user_authorized_data["username"]
 
         response = SendRequest.post(API_USER_LOGIN, data=test_user_credentials)
@@ -49,7 +48,8 @@ class TestGetUserData(BaseCase):
 
     @allure.description("Test if authorized user is unable to get user data of another user")
     def test_get_user_data_authorized_as_different_user(self):
-        api_user_id = f"{API_USER_CREATE}/1"
+        random_existing_user_id = randint(1, self.user_id_from_auth_method + 1)
+        api_user_id = f"{API_USER_CREATE}/{random_existing_user_id}"
         response = SendRequest.get(
             api_user_id,
             cookies={"auth_sid": self.auth_sid_cookie},
@@ -62,7 +62,8 @@ class TestGetUserData(BaseCase):
     @allure.description("Test if authorized user is unable to get data of non-existing user")
     def test_get_unexisting_user_data_unauthorized(self):
         unexisting_user_id = randint(400_000, 500_000)
+        error_message = "User not found"
         api_user_id = f"{API_USER_CREATE}/{unexisting_user_id}"
-        response = SendRequest.get(api_user_id)
 
-        assert response.text == "User not found", f"'user_id': {unexisting_user_id} should be unexisting"
+        response = SendRequest.get(api_user_id)
+        Assertions.assert_response_text(response, error_message)
