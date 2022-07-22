@@ -6,6 +6,7 @@ from utils.urls import (API_USER_CREATE,
                         API_USER_LOGIN,
                         API_USER_AUTH)
 from lib.send_requests import SendRequest
+from random import choice
 
 
 @allure.epic("Successful editing user data test cases")
@@ -127,6 +128,7 @@ class TestUserSuccessfulEdit(BaseCase):
 
 class TestUserUnsuccessfulEdit(BaseCase):
     condition = ["no_token", "no_cookie"]
+    params_to_edit = ["firstName", "lastName", "username", "email", "password"]
 
     def setup(self):
         # Register new user
@@ -154,17 +156,18 @@ class TestUserUnsuccessfulEdit(BaseCase):
     @allure.description("Tests if user is unable to edit his last name if he is unauthorized "
                         "(cookie or auth token is missing)")
     @pytest.mark.parametrize("condition", condition)
-    def test_edit_created_user_data_as_unauthorized_user(self, condition):
+    @pytest.mark.parametrize("random_param", [choice(params_to_edit)])
+    def test_edit_created_user_data_as_unauthorized_user(self, condition, random_param):
         # Edit created user data (lastName) without token and cookie separately
-        new_last_name = "New last name"
-        old_last_name = self.register_data["lastName"]
+        new_param_value = self.prepare_registration_data()[random_param]
+        old_param_value = self.register_data[random_param]
         error_message = "Auth token not supplied"
 
         if condition == "no_token":
             response_3 = SendRequest.put(
                 self.api_update_user,
                 cookies={"auth_sid": self.auth_sid_cookie},
-                data={"lastName": new_last_name}
+                data={random_param: new_param_value}
             )
             Assertions.assert_status_code(response_3, 400)
             Assertions.assert_response_text(response_3, error_message)
@@ -172,8 +175,8 @@ class TestUserUnsuccessfulEdit(BaseCase):
         else:
             response_3 = SendRequest.put(
                 self.api_update_user,
-                cookies={"auth_sid": self.auth_sid_cookie},
-                data={"lastName": new_last_name}
+                headers={"x-csrf-token": self.csrf_token_header},
+                data={random_param: new_param_value}
             )
             Assertions.assert_status_code(response_3, 400)
             Assertions.assert_response_text(response_3, error_message)
@@ -186,6 +189,9 @@ class TestUserUnsuccessfulEdit(BaseCase):
         )
         Assertions.assert_json_value_by_key(
             response_4,
-            "lastName",
-            old_last_name
+            random_param,
+            old_param_value
         )
+
+    def test_edit_created_user_data_with_empty_values(self):
+        pass
