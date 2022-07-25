@@ -129,6 +129,7 @@ class TestUserSuccessfulEdit(BaseCase):
 class TestUserUnsuccessfulEdit(BaseCase):
     condition = ["no_token", "no_cookie"]
     params_to_edit = ["firstName", "lastName", "username", "email", "password"]
+    invalid_value_types = ["empty_value", "too_long_value"]
     max_length = 250
 
     def setup(self):
@@ -194,13 +195,18 @@ class TestUserUnsuccessfulEdit(BaseCase):
             old_param_value
         )
 
-    @allure.description("Tests if user is unable to edit his data if he passes empty value")
+    @allure.description("Tests if user is unable to edit his data if he passes empty or too long value")
     @pytest.mark.parametrize("param_to_edit", params_to_edit)
-    def test_edit_created_user_data_with_empty_values(self, param_to_edit):
-        # Edit parameter of user data and replace it with empty value
-        new_param_value = ""
+    @pytest.mark.parametrize("invalid_value_type", invalid_value_types)
+    def test_edit_created_user_data_with_invalid_values(self, param_to_edit, invalid_value_type):
+        # Edit parameter of user data and replace it with empty/too long value
         old_param_value = self.register_data[param_to_edit]
-        error_message = f"Too short value for field {param_to_edit}"
+        if invalid_value_type == "empty_value":
+            new_param_value = ""
+            error_message = f"Too short value for field {param_to_edit}"
+        else:
+            new_param_value = self.random_sting(length=self.max_length + 1)
+            error_message = f"Too long value for field {param_to_edit}"
 
         response_1 = SendRequest.put(
             self.api_update_user,
@@ -215,48 +221,6 @@ class TestUserUnsuccessfulEdit(BaseCase):
             Assertions.assert_response_text(response_1, expected_text="Invalid email format")
         else:
             Assertions.assert_json_value_by_key(response_1, "error", error_message)
-
-        # If password is changed, check that user can successfully login with the old one
-        # Else, get user data and verify the parameter wasn't changed
-        if param_to_edit == "password":
-            response_2 = SendRequest.post(API_USER_LOGIN, data=self.login_data)
-
-            Assertions.assert_status_code(response_2, 200)
-            Assertions.assert_json_value_by_key(response_2, "user_id", self.created_user_id)
-
-        else:
-            response_2 = SendRequest.get(
-                self.api_update_user,
-                cookies={"auth_sid": self.auth_sid_cookie},
-                headers={"x-csrf-token": self.csrf_token_header}
-            )
-
-            Assertions.assert_json_value_by_key(
-                response_2,
-                param_to_edit,
-                old_param_value
-            )
-
-    @allure.description("Tests if user is unable to change his data if parameter value exceeds max length")
-    @pytest.mark.parametrize("param_to_edit", params_to_edit)
-    def test_edit_created_user_data_with_too_long_values(self, param_to_edit):
-        new_param_value = self.random_sting(length=self.max_length + 1)
-        old_param_value = self.register_data[param_to_edit]
-        error_message = f"Too long value for field {param_to_edit}"
-
-        response = SendRequest.put(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header},
-            data={param_to_edit: new_param_value}
-        )
-
-        Assertions.assert_status_code(response, 400)
-
-        if param_to_edit == "email":
-            Assertions.assert_response_text(response, expected_text="Invalid email format")
-        else:
-            Assertions.assert_json_value_by_key(response, "error", error_message)
 
         # If password is changed, check that user can successfully login with the old one
         # Else, get user data and verify the parameter wasn't changed
