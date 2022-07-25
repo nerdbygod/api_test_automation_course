@@ -133,6 +133,7 @@ class TestUserUnsuccessfulEdit(BaseCase):
     params_to_edit = ["firstName", "lastName", "username", "email", "password"]
     personal_data_params = ["firstName", "lastName", "username"]
     invalid_value_types = ["empty_value", "too_long_value"]
+    invalid_param_keys = ["", "id", "some_invalid_param"]
     max_length = 250
 
     def setup(self):
@@ -246,6 +247,7 @@ class TestUserUnsuccessfulEdit(BaseCase):
                 old_param_value
             )
 
+    @allure.description("Tests if authenticated user is unable to edit data of another user")
     @pytest.mark.xfail
     @pytest.mark.parametrize("random_param", [choice(personal_data_params)])
     def test_user_edit_created_user_data_authorized_as_different_user(self,
@@ -305,6 +307,7 @@ class TestUserUnsuccessfulEdit(BaseCase):
             test_user_old_param_value
         )
 
+    @allure.description("Tests if user is unable to change his email to already existing email")
     def test_edit_created_user_email_to_existing_email(self):
         error_message = f"Users with email '{self.email}' already exists"
         response = SendRequest.put(
@@ -325,3 +328,26 @@ class TestUserUnsuccessfulEdit(BaseCase):
         )
         Assertions.assert_status_code(response_2, 200)
         Assertions.assert_json_value_by_key(response_2, "email", self.email)
+
+    @pytest.mark.parametrize("invalid_param_key", invalid_param_keys)
+    def test_edit_created_user_invalid_param(self, invalid_param_key):
+        error_message = "No data to update"
+        random_value = self.random_sting()
+
+        if invalid_param_key == "id":
+            random_value = self.random_int()
+
+        data = {invalid_param_key: random_value}
+
+        if invalid_param_key == "":
+            data = {}
+
+        response = SendRequest.put(
+            self.api_update_user,
+            cookies={"auth_sid": self.auth_sid_cookie},
+            headers={"x-csrf-token": self.csrf_token_header},
+            data=data
+        )
+
+        Assertions.assert_status_code(response, 400)
+        Assertions.assert_response_text(response, error_message)

@@ -1,6 +1,7 @@
 from requests import Response
 from lib.assertions import Assertions
 from faker import Faker
+from random import randint
 
 
 class BaseCase:
@@ -42,3 +43,6 @@ class BaseCase:
     def random_sting(self, length=7):
         fake = Faker()
         return fake.pystr(length, length)
+
+    def random_int(self, length=6):
+        return int(''.join([str(randint(1, 9)) for _ in range(length)]))
