@@ -7,6 +7,8 @@ from lib.send_requests import SendRequest
 from utils.urls import (API_USER_CREATE,
                         API_USER_LOGIN,
                         API_USER_AUTH)
+from utils.data_for_tests import (test_user_credentials,
+                                  test_user_for_creation_data)
 
 
 @allure.epic("Successful editing user data test cases")
@@ -129,6 +131,7 @@ class TestUserSuccessfulEdit(BaseCase):
 class TestUserUnsuccessfulEdit(BaseCase):
     condition = ["no_token", "no_cookie"]
     params_to_edit = ["firstName", "lastName", "username", "email", "password"]
+    personal_data_params = ["firstName", "lastName", "username"]
     invalid_value_types = ["empty_value", "too_long_value"]
     max_length = 250
 
@@ -242,3 +245,62 @@ class TestUserUnsuccessfulEdit(BaseCase):
                 param_to_edit,
                 old_param_value
             )
+
+    @pytest.mark.xfail
+    @pytest.mark.parametrize("random_param", [choice(personal_data_params)])
+    def test_user_edit_created_user_data_authorized_as_different_user(self,
+                                                                      get_test_user_data_to_initial_state,
+                                                                      random_param):
+        # 2 authorized users are used - one whose cookies and token are used for login, the other is
+        # the one whose data will be changed. The second one will login to see if data hasn't been changed
+        # Created user will be the one whose data will be changed
+        # Authorized user will be test user 38880
+
+        # Login as test user
+        test_user_login_response = SendRequest.post(API_USER_LOGIN, data=test_user_credentials)
+        test_user_auth_cookie = self.get_cookie(test_user_login_response, "auth_sid")
+        test_user_csrf_token = self.get_header(test_user_login_response, "x-csrf-token")
+        test_user_id = self.get_json_value(test_user_login_response, "user_id")
+        api_test_user = f"{API_USER_CREATE}/{test_user_id}"
+
+        new_param_value = self.prepare_registration_data()[random_param]
+        created_user_old_param_value = self.register_data[random_param]
+        error_message = "Auth token not supplied"
+        # Change data of created user with test user auth cookie and token
+        edit_created_user_data_response = SendRequest.put(
+            self.api_update_user,
+            cookies={"auth_sid": test_user_auth_cookie},
+            headers={"x-csrf-token": test_user_csrf_token},
+            data={random_param: new_param_value}
+        )
+
+        # Check status code and error message
+        Assertions.assert_status_code(edit_created_user_data_response, 400)
+        Assertions.assert_response_text(edit_created_user_data_response, error_message)
+
+        # Check that created user's data hasn't changed
+        get_created_user_data_response = SendRequest.get(
+            self.api_update_user,
+            cookies={"auth_sid": self.auth_sid_cookie},
+            headers={"x-csrf-token": self.csrf_token_header}
+        )
+        Assertions.assert_status_code(get_created_user_data_response, 200)
+        Assertions.assert_json_value_by_key(
+            get_created_user_data_response,
+            random_param,
+            created_user_old_param_value
+        )
+
+        # Check that test user's data hasn't changed
+        test_user_old_param_value = test_user_for_creation_data[random_param]
+        get_test_user_data_response = SendRequest.get(
+            api_test_user,
+            cookies={"auth_sid": test_user_auth_cookie},
+            headers={"x-csrf-token": test_user_csrf_token}
+        )
+        Assertions.assert_status_code(get_test_user_data_response, 200)
+        Assertions.assert_json_value_by_key(
+            get_test_user_data_response,
+            random_param,
+            test_user_old_param_value
+        )

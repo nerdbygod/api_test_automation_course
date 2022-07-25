@@ -6,6 +6,8 @@ test_user_for_creation_data = {
     "password": "johndoe123"
 }
 
+test_user_id = 38880
+
 test_user_authorized_data = {
     "id": "38880",
     "username": "JohnDoe2001",
