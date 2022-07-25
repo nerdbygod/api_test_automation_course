@@ -304,3 +304,24 @@ class TestUserUnsuccessfulEdit(BaseCase):
             random_param,
             test_user_old_param_value
         )
+
+    def test_edit_created_user_email_to_existing_email(self):
+        error_message = f"Users with email '{self.email}' already exists"
+        response = SendRequest.put(
+            self.api_update_user,
+            cookies={"auth_sid": self.auth_sid_cookie},
+            headers={"x-csrf-token": self.csrf_token_header},
+            data={"email": self.email}
+        )
+
+        Assertions.assert_status_code(response, 400)
+        Assertions.assert_response_text(response, error_message)
+
+        # Check that email is actually not changed
+        response_2 = SendRequest.get(
+            self.api_update_user,
+            cookies={"auth_sid": self.auth_sid_cookie},
+            headers={"x-csrf-token": self.csrf_token_header}
+        )
+        Assertions.assert_status_code(response_2, 200)
+        Assertions.assert_json_value_by_key(response_2, "email", self.email)
