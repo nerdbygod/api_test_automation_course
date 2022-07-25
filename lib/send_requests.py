@@ -10,22 +10,22 @@ class SendRequest:
     # so that it is not passed every time to each method, or better use it as a pytest fixture or
     # to pytest.ini to be passed as a command line argument
     @staticmethod
-    def post(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=False):
+    def post(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=True):
         with allure.step(f"POST request to URL: '{url}'"):
             return SendRequest._send("POST", url, data, headers, cookies, logging)
 
     @staticmethod
-    def get(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=False):
+    def get(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=True):
         with allure.step(f"GET request to URL: '{url}'"):
             return SendRequest._send("GET", url, data, headers, cookies, logging)
 
     @staticmethod
-    def put(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=False):
+    def put(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=True):
         with allure.step(f"PUT request to URL: '{url}'"):
             return SendRequest._send("PUT", url, data, headers, cookies, logging)
 
     @staticmethod
-    def delete(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=False):
+    def delete(url: str, data: dict = None, headers: dict = None, cookies: dict = None, logging=True):
         with allure.step(f"DELETE request to URL: '{url}'"):
             return SendRequest._send("DELETE", url, data, headers, cookies, logging)
 

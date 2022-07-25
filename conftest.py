@@ -43,3 +43,15 @@ def get_test_user_data_to_initial_state():
 
     Assertions.assert_status_code(response_3, 200)
     Assertions.assert_equal_json_objects(response_3, test_user_authorized_data)
+
+
+@pytest.fixture(scope="function")
+def setup():
+    user_data = base_case.create_user()
+    yield user_data
+    base_case.delete_user(
+        user_id=user_data["created_user_id"],
+        auth_sid_cookie=user_data["cookie"],
+        csrf_token=user_data["header"],
+        login_data=user_data["login_data"]
+    )

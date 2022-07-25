@@ -59,11 +59,12 @@ class TestGetUserData(BaseCase):
         Assertions.assert_json_has_not_keys(response, *self.unexpected_keys)
         Assertions.assert_different_json_values_by_key(response, "username", self.expected_user_name)
 
-    @allure.description("Test if authorized user is unable to get data of non-existing user")
+    @allure.description("Test if unauthorized user is unable to get data of non-existing user")
     def test_get_unexisting_user_data_unauthorized(self):
         unexisting_user_id = randint(400_000, 500_000)
         error_message = "User not found"
         api_user_id = f"{API_USER_CREATE}/{unexisting_user_id}"
 
         response = SendRequest.get(api_user_id)
+        Assertions.assert_status_code(response, 404)
         Assertions.assert_response_text(response, error_message)

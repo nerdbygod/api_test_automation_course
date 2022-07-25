@@ -61,4 +61,4 @@ class Assertions:
     def assert_response_text(response: Response, expected_text: str):
         actual_text = response.text
         assert actual_text == expected_text, f"Unexpected response text for URL: '{response.url}': " \
-                                             f"got {actual_text}, expected '{expected_text}'"
+                                             f"got '{actual_text}', expected '{expected_text}'"
