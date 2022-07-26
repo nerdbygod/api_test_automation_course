@@ -42,7 +42,8 @@ class Assertions:
     @staticmethod
     def assert_equal_json_objects(response: Response, expected_result: dict):
         response_obj = Assertions.to_json(response)
-        assert response_obj == expected_result, "JSON objects are not equal!"
+        assert response_obj == expected_result, f"JSON objects are not equal! Got '{response_obj}', " \
+                                                f"expected '{expected_result}'"
 
     @staticmethod
     def assert_status_code(response: Response, expected_code: int):

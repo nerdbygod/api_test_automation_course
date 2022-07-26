@@ -17,7 +17,8 @@ def get_test_user_data_to_initial_state():
     ...
     yield
 
-    del test_user_for_creation_data["email"]
+    test_user_data_without_email = test_user_for_creation_data.copy()
+    test_user_data_without_email.pop("email")
     response = SendRequest.post(API_USER_LOGIN, data=test_user_credentials)
     Assertions.assert_status_code(response, 200)
     Assertions.assert_json_value_by_key(response, "user_id", test_user_id)
@@ -30,7 +31,7 @@ def get_test_user_data_to_initial_state():
         api_update_user,
         cookies={"auth_sid": auth_sid_cookie},
         headers={"x-csrf-token": csrf_token},
-        data=test_user_for_creation_data
+        data=test_user_data_without_email
     )
 
     Assertions.assert_status_code(response_2, 200)

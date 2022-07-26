@@ -127,7 +127,7 @@ class TestUserSuccessfulEdit(BaseCase):
 
         Assertions.assert_json_value_by_key(response_4, "user_id", self.created_user_id)
 
-
+@allure.epic("Test cases for unsuccessful editing of user data")
 class TestUserUnsuccessfulEdit(BaseCase):
     condition = ["no_token", "no_cookie"]
     params_to_edit = ["firstName", "lastName", "username", "email", "password"]

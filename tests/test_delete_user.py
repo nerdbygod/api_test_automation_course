@@ -1,14 +1,15 @@
 import allure
+import pytest
 from lib.send_requests import SendRequest
 from lib.assertions import Assertions
 from lib.base_case import BaseCase
 from utils.urls import API_USER_LOGIN, API_USER_CREATE
-from utils.data_for_tests import (test_user_for_creation_data,
-                                  test_user_credentials,
+from utils.data_for_tests import (test_user_credentials,
                                   test_user_authorized_data,
                                   test_user_id)
 
 
+@allure.epic("Test cases for successful user deletion")
 class TestSuccessfulUserDeletion(BaseCase):
     def setup(self):
         # Register new user
@@ -57,6 +58,7 @@ class TestSuccessfulUserDeletion(BaseCase):
         Assertions.assert_response_text(response_2, "Invalid username/password supplied")
 
 
+@allure.epic("Test cases for unsuccessful user deletion")
 class TestUnsuccessfulUserDeletion(BaseCase):
     def setup(self):
         # Register new user
@@ -142,7 +144,7 @@ class TestUnsuccessfulUserDeletion(BaseCase):
             undeletable_user_id
         )
 
-    # @pytest.mark.xfail
+    @pytest.mark.xfail
     @allure.description("Tests if authorized user can't delete another user")
     def test_delete_created_user_authorized_as_different_user(self):
         # Login as test user
@@ -157,8 +159,8 @@ class TestUnsuccessfulUserDeletion(BaseCase):
         )
 
         # Check status code and error message
-        # Assertions.assert_status_code(delete_test_user_data_response, 400)
-        # Assertions.assert_response_text(delete_test_user_data_response, error_message)
+        Assertions.assert_status_code(delete_test_user_data_response, 400)
+        Assertions.assert_response_text(delete_test_user_data_response, error_message)
 
         # Check that test user can login
         test_user_login_response_after_deletion_attempt = SendRequest.post(
@@ -177,7 +179,7 @@ class TestUnsuccessfulUserDeletion(BaseCase):
         # Check that test user's data hasn't been deleted
         # the test fails here, but it shouldn't. Needs to be refactored
         get_test_user_data_response = SendRequest.get(
-            self.api_update_user,
+            api_test_user,
             cookies={"auth_sid": test_user_auth_cookie},
             headers={"x-csrf-token": test_user_csrf_token}
         )
@@ -189,6 +191,13 @@ class TestUnsuccessfulUserDeletion(BaseCase):
             API_USER_LOGIN,
             data=self.register_data
         )
+        Assertions.assert_status_code(created_user_login_response_after_deletion_attempt, 200)
+        Assertions.assert_json_value_by_key(
+            created_user_login_response_after_deletion_attempt,
+            "user_id",
+            self.created_user_id
+        )
+
         auth_sid_cookie = self.get_cookie(
             created_user_login_response_after_deletion_attempt,
             "auth_sid"
@@ -215,3 +224,10 @@ class TestUnsuccessfulUserDeletion(BaseCase):
             "email",
             self.register_data["email"]
         )
+
+    @allure.description("Tests if unauthorized user can't delete any user")
+    def test_delete_created_user_unauthorized(self):
+        response = SendRequest.delete(self.api_update_user)
+
+        Assertions.assert_status_code(response, 400)
+        Assertions.assert_response_text(response, "Auth token not supplied")
