@@ -7,7 +7,7 @@ from lib.assertions import Assertions
 from lib.base_case import BaseCase
 from lib.send_requests import SendRequest
 from utils.urls import API_USER_LOGIN, API_USER_CREATE
-
+from lib.user import User
 
 base_case = BaseCase()
 
@@ -47,12 +47,7 @@ def get_test_user_data_to_initial_state():
 
 
 @pytest.fixture(scope="function")
-def setup():
-    user_data = base_case.create_user()
-    yield user_data
-    base_case.delete_user(
-        user_id=user_data["created_user_id"],
-        auth_sid_cookie=user_data["cookie"],
-        csrf_token=user_data["header"],
-        login_data=user_data["login_data"]
-    )
+def prepare_test_user():
+    new_user = User(5)
+    yield new_user
+    new_user.delete_user()

@@ -16,32 +16,11 @@ class TestUserSuccessfulEdit(BaseCase):
     params_to_edit = ["firstName", "lastName", "username"]
     credentials_to_edit = ["email", "password"]
 
-    def setup(self):
-        # Register new user
-        self.register_data = self.prepare_registration_data()
-        response_1 = SendRequest.post(API_USER_CREATE, data=self.register_data)
-
-        Assertions.assert_status_code(response_1, 200)
-        Assertions.assert_json_has_key(response_1, "id")
-
-        self.email = self.register_data["email"]
-        self.password = self.register_data["password"]
-        self.created_user_id = int(self.get_json_value(response_1, "id"))  # Bug: POST /api/user returns "id" as str
-
-        # Login registered user
-        self.login_data = {
-            "email": self.email,
-            "password": self.password
-        }
-        response_2 = SendRequest.post(API_USER_LOGIN, data=self.login_data)
-        self.auth_sid_cookie = self.get_cookie(response_2, "auth_sid")
-        self.csrf_token_header = self.get_header(response_2, "x-csrf-token")
-
-        self.api_update_user = f"{API_USER_CREATE}/{self.created_user_id}"
-
     @allure.description(f"Tests if authorized user can successfully edit his personal data: {params_to_edit}")
     @pytest.mark.parametrize("param_to_edit", params_to_edit)
-    def test_edit_created_user_personal_data(self, param_to_edit):
+    def test_edit_created_user_personal_data(self, param_to_edit, prepare_test_user):
+        new_user = prepare_test_user
+
         # Edit created user's data
         if param_to_edit == "firstName":
             new_param_value = "New first name"
@@ -53,18 +32,18 @@ class TestUserSuccessfulEdit(BaseCase):
             new_param_value = "New username"
 
         response = SendRequest.put(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header},
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header},
             data={param_to_edit: new_param_value}
         )
         Assertions.assert_status_code(response, 200)
 
         # Check changed data
         response_1 = SendRequest.get(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header}
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header},
         )
         Assertions.assert_json_value_by_key(
             response_1,
@@ -74,7 +53,8 @@ class TestUserSuccessfulEdit(BaseCase):
 
     @allure.description("Tests if authorized user can edit his email and password and log in with new creds")
     @pytest.mark.parametrize("credential_to_edit", credentials_to_edit)
-    def test_edit_created_user_credentials_and_login(self, credential_to_edit):
+    def test_edit_created_user_credentials_and_login(self, credential_to_edit, prepare_test_user):
+        new_user = prepare_test_user
         error_message = "Invalid username/password supplied"
         if credential_to_edit == "email":
             new_valid_credential_value = self.prepare_registration_data()["email"]
@@ -82,9 +62,9 @@ class TestUserSuccessfulEdit(BaseCase):
             new_valid_credential_value = self.random_sting()
 
         response = SendRequest.put(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header},
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header},
             data={credential_to_edit: new_valid_credential_value}
         )
         Assertions.assert_status_code(response, 200)
@@ -92,9 +72,9 @@ class TestUserSuccessfulEdit(BaseCase):
         # Check changed data (with token/cookie received by old email) if email was changed
         if credential_to_edit == "email":
             response_1 = SendRequest.get(
-                self.api_update_user,
-                cookies={"auth_sid": self.auth_sid_cookie},
-                headers={"x-csrf-token": self.csrf_token_header}
+                new_user.api_user,
+                cookies={"auth_sid": new_user.auth_sid_cookie},
+                headers={"x-csrf-token": new_user.csrf_token_header}
             )
             Assertions.assert_json_value_by_key(
                 response_1,
@@ -103,18 +83,18 @@ class TestUserSuccessfulEdit(BaseCase):
             )
 
         # Verify user can't login with old credentials
-        response_2 = SendRequest.post(API_USER_LOGIN, data=self.login_data)
+        response_2 = SendRequest.post(API_USER_LOGIN, data=new_user.login_data)
 
         Assertions.assert_status_code(response_2, 400)
         Assertions.assert_response_text(response_2, error_message)
 
         # Verify user can login with new credentials
-        self.login_data[credential_to_edit] = new_valid_credential_value
+        new_user.login_data[credential_to_edit] = new_valid_credential_value
 
-        response_3 = SendRequest.post(API_USER_LOGIN, data=self.login_data)
+        response_3 = SendRequest.post(API_USER_LOGIN, data=new_user.login_data)
 
         Assertions.assert_status_code(response_3, 200)
-        Assertions.assert_json_value_by_key(response_3, "user_id", self.created_user_id)
+        Assertions.assert_json_value_by_key(response_3, "user_id", new_user.id)
         new_auth_sid_cookie = self.get_cookie(response_3, "auth_sid")
         new_csrf_token_header = self.get_header(response_3, "x-csrf-token")
 
@@ -124,8 +104,8 @@ class TestUserSuccessfulEdit(BaseCase):
             cookies={"auth_sid": new_auth_sid_cookie},
             headers={"x-csrf-token": new_csrf_token_header}
         )
+        Assertions.assert_json_value_by_key(response_4, "user_id", new_user.id)
 
-        Assertions.assert_json_value_by_key(response_4, "user_id", self.created_user_id)
 
 @allure.epic("Test cases for unsuccessful editing of user data")
 class TestUserUnsuccessfulEdit(BaseCase):
@@ -136,43 +116,22 @@ class TestUserUnsuccessfulEdit(BaseCase):
     invalid_param_keys = ["", "id", "some_invalid_param"]
     max_length = 250
 
-    def setup(self):
-        # Register new user
-        self.register_data = self.prepare_registration_data()
-        response_1 = SendRequest.post(API_USER_CREATE, data=self.register_data)
-
-        Assertions.assert_status_code(response_1, 200)
-        Assertions.assert_json_has_key(response_1, "id")
-
-        self.email = self.register_data["email"]
-        self.password = self.register_data["password"]
-        self.created_user_id = int(self.get_json_value(response_1, "id"))
-
-        # Login registered user
-        self.login_data = {
-            "email": self.email,
-            "password": self.password
-        }
-        response_2 = SendRequest.post(API_USER_LOGIN, data=self.login_data)
-        self.auth_sid_cookie = self.get_cookie(response_2, "auth_sid")
-        self.csrf_token_header = self.get_header(response_2, "x-csrf-token")
-
-        self.api_update_user = f"{API_USER_CREATE}/{self.created_user_id}"
-
     @allure.description("Tests if user is unable to edit his data if he is unauthorized "
                         "(cookie or auth token is missing)")
     @pytest.mark.parametrize("condition", condition)
     @pytest.mark.parametrize("random_param", [choice(params_to_edit)])
-    def test_edit_created_user_data_as_unauthorized_user(self, condition, random_param):
+    def test_edit_created_user_data_as_unauthorized_user(self, condition, random_param, prepare_test_user):
+        new_user = prepare_test_user
+
         # Edit random parameter of user data without token and cookie separately
         new_param_value = self.prepare_registration_data()[random_param]
-        old_param_value = self.register_data[random_param]
+        old_param_value = new_user.user_data[random_param]
         error_message = "Auth token not supplied"
 
         if condition == "no_token":
             response_3 = SendRequest.put(
-                self.api_update_user,
-                cookies={"auth_sid": self.auth_sid_cookie},
+                new_user.api_user,
+                cookies={"auth_sid": new_user.auth_sid_cookie},
                 data={random_param: new_param_value}
             )
             Assertions.assert_status_code(response_3, 400)
@@ -180,8 +139,8 @@ class TestUserUnsuccessfulEdit(BaseCase):
 
         else:
             response_3 = SendRequest.put(
-                self.api_update_user,
-                headers={"x-csrf-token": self.csrf_token_header},
+                new_user.api_user,
+                headers={"x-csrf-token": new_user.csrf_token_header},
                 data={random_param: new_param_value}
             )
             Assertions.assert_status_code(response_3, 400)
@@ -189,9 +148,9 @@ class TestUserUnsuccessfulEdit(BaseCase):
 
         # Check that the parameter is not changed
         response_4 = SendRequest.get(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header}
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header}
         )
         Assertions.assert_json_value_by_key(
             response_4,
@@ -202,9 +161,10 @@ class TestUserUnsuccessfulEdit(BaseCase):
     @allure.description("Tests if user is unable to edit his data if he passes empty or too long value")
     @pytest.mark.parametrize("param_to_edit", params_to_edit)
     @pytest.mark.parametrize("invalid_value_type", invalid_value_types)
-    def test_edit_created_user_data_with_invalid_values(self, param_to_edit, invalid_value_type):
+    def test_edit_created_user_data_with_invalid_values(self, param_to_edit, invalid_value_type, prepare_test_user):
+        new_user = prepare_test_user
         # Edit parameter of user data and replace it with empty/too long value
-        old_param_value = self.register_data[param_to_edit]
+        old_param_value = new_user.user_data[param_to_edit]
         if invalid_value_type == "empty_value":
             new_param_value = ""
             error_message = f"Too short value for field {param_to_edit}"
@@ -213,9 +173,9 @@ class TestUserUnsuccessfulEdit(BaseCase):
             error_message = f"Too long value for field {param_to_edit}"
 
         response_1 = SendRequest.put(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header},
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header},
             data={param_to_edit: new_param_value}
         )
 
@@ -229,16 +189,16 @@ class TestUserUnsuccessfulEdit(BaseCase):
         # If password is changed, check that user can successfully login with the old one
         # Else, get user data and verify the parameter wasn't changed
         if param_to_edit == "password":
-            response_2 = SendRequest.post(API_USER_LOGIN, data=self.login_data)
+            response_2 = SendRequest.post(API_USER_LOGIN, data=new_user.login_data)
 
             Assertions.assert_status_code(response_2, 200)
-            Assertions.assert_json_value_by_key(response_2, "user_id", self.created_user_id)
+            Assertions.assert_json_value_by_key(response_2, "user_id", new_user.id)
 
         else:
             response_2 = SendRequest.get(
-                self.api_update_user,
-                cookies={"auth_sid": self.auth_sid_cookie},
-                headers={"x-csrf-token": self.csrf_token_header}
+                new_user.api_user,
+                cookies={"auth_sid": new_user.auth_sid_cookie},
+                headers={"x-csrf-token": new_user.csrf_token_header}
             )
 
             Assertions.assert_json_value_by_key(
@@ -251,6 +211,7 @@ class TestUserUnsuccessfulEdit(BaseCase):
     @pytest.mark.xfail
     @pytest.mark.parametrize("random_param", [choice(personal_data_params)])
     def test_user_edit_created_user_data_authorized_as_different_user(self,
+                                                                      prepare_test_user,
                                                                       get_test_user_data_to_initial_state,
                                                                       random_param):
         # 2 authorized users are used - one whose cookies and token are used for login, the other is
@@ -265,12 +226,14 @@ class TestUserUnsuccessfulEdit(BaseCase):
         test_user_id = self.get_json_value(test_user_login_response, "user_id")
         api_test_user = f"{API_USER_CREATE}/{test_user_id}"
 
+        new_user = prepare_test_user
+
         new_param_value = self.prepare_registration_data()[random_param]
-        created_user_old_param_value = self.register_data[random_param]
+        created_user_old_param_value = new_user.user_data[random_param]
         error_message = "Auth token not supplied"
         # Change data of created user with test user auth cookie and token
         edit_created_user_data_response = SendRequest.put(
-            self.api_update_user,
+            new_user.api_user,
             cookies={"auth_sid": test_user_auth_cookie},
             headers={"x-csrf-token": test_user_csrf_token},
             data={random_param: new_param_value}
@@ -282,9 +245,9 @@ class TestUserUnsuccessfulEdit(BaseCase):
 
         # Check that created user's data hasn't changed
         get_created_user_data_response = SendRequest.get(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header}
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header}
         )
         Assertions.assert_status_code(get_created_user_data_response, 200)
         Assertions.assert_json_value_by_key(
@@ -308,13 +271,15 @@ class TestUserUnsuccessfulEdit(BaseCase):
         )
 
     @allure.description("Tests if user is unable to change his email to already existing email")
-    def test_edit_created_user_email_to_existing_email(self):
-        error_message = f"Users with email '{self.email}' already exists"
+    def test_edit_created_user_email_to_existing_email(self, prepare_test_user):
+        new_user = prepare_test_user
+
+        error_message = f"Users with email '{new_user.email}' already exists"
         response = SendRequest.put(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header},
-            data={"email": self.email}
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header},
+            data={"email": new_user.email}
         )
 
         Assertions.assert_status_code(response, 400)
@@ -322,31 +287,33 @@ class TestUserUnsuccessfulEdit(BaseCase):
 
         # Check that email is actually not changed
         response_2 = SendRequest.get(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header}
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header}
         )
         Assertions.assert_status_code(response_2, 200)
-        Assertions.assert_json_value_by_key(response_2, "email", self.email)
+        Assertions.assert_json_value_by_key(response_2, "email", new_user.email)
 
     @pytest.mark.parametrize("invalid_param_key", invalid_param_keys)
-    def test_edit_created_user_invalid_param(self, invalid_param_key):
+    def test_edit_created_user_invalid_param(self, invalid_param_key, prepare_test_user):
+        new_user = prepare_test_user
+
         error_message = "No data to update"
         random_value = self.random_sting()
 
         if invalid_param_key == "id":
             random_value = self.random_int()
 
-        data = {invalid_param_key: random_value}
+        invalid_data = {invalid_param_key: random_value}
 
         if invalid_param_key == "":
-            data = {}
+            invalid_data = {}
 
         response = SendRequest.put(
-            self.api_update_user,
-            cookies={"auth_sid": self.auth_sid_cookie},
-            headers={"x-csrf-token": self.csrf_token_header},
-            data=data
+            new_user.api_user,
+            cookies={"auth_sid": new_user.auth_sid_cookie},
+            headers={"x-csrf-token": new_user.csrf_token_header},
+            data=invalid_data
         )
 
         Assertions.assert_status_code(response, 400)
