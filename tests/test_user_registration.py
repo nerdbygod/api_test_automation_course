@@ -24,7 +24,6 @@ class TestUserRegistration(BaseCase):
 
     @allure.description("Tests if user is unable to register with existing email")
     def test_user_creation_with_existing_email(self):
-        print(f"{test_user_for_creation_data = }")
         existing_email = test_user_for_creation_data["email"]
         error_message = f"Users with email '{existing_email}' already exists"
 
